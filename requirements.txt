@@ -1,0 +1,23 @@
+# Core dependencies (Phases 1-3 + tests). Pinned for reproducibility.
+pandas==2.2.3
+numpy==1.26.4
+scikit-learn==1.5.2
+lightgbm==4.5.0
+matplotlib==3.9.2
+ucimlrepo==0.0.7
+tqdm==4.66.5
+
+# Notebook + dev tooling
+jupyterlab==4.2.5
+ipykernel==6.29.5
+papermill==2.6.0
+pytest==8.3.3
+
+# Phase 4 (gen AI explanation audit) -- optional; needs an OpenAI key.
+# Uncomment to install, or: pip install openai instructor pydantic python-dotenv shap
+openai==1.54.4
+instructor==1.6.4
+pydantic==2.9.2
+python-dotenv==1.0.1
+shap==0.46.0
+httpx==0.27.2  # openai 1.54.x passes a 'proxies' arg removed in httpx>=0.28
