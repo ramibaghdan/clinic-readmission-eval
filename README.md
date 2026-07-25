@@ -33,7 +33,7 @@ health system could responsibly consider.
 
 ---
 
-## What changed when we evaluated honestly
+## What changed when evaluating honestly
 
 Same model (LightGBM) with the same hyperparameters. The only changes are a
 patient-grouped split instead of a leaky stratified one, and a cohort that
@@ -151,7 +151,7 @@ test (measured: **38% of test patients leaked**). Fix: `GroupShuffleSplit` on
 
 **Issue 2: the cohort includes patients who could not be readmitted.**
 `discharge_disposition_id` encodes expired and hospice discharges; a patient who
-died is a guaranteed negative. We drop disposition IDs **11, 13, 14, 19, 20, 21**
+died is a guaranteed negative. I drop disposition IDs **11, 13, 14, 19, 20, 21**
 (**2,423 rows**) in the corrected cohort and document it.
 
 **Issue 3: label binarization.** `readmitted` is three-class. HRRP is a 30-day
@@ -169,7 +169,7 @@ program, so the target is `<30` = 1, `{>30, NO}` = 0. Base rate ≈ **11.2%**.
 ### Full results (corrected model)
 
 **Discrimination & calibration.** AUROC 0.678, AUPRC 0.245 (base rate 0.112),
-Brier 0.094, calibration slope 0.95 — well calibrated, unusually for this
+Brier 0.094, calibration slope 0.95; well calibrated, unusually for this
 dataset. (Notebook section 4b.)
 
 **Baselines vs boosted model** (notebook section 4d):
