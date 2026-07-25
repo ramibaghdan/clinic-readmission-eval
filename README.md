@@ -45,7 +45,7 @@ excludes patients who could not be readmitted (expired/hospice discharges).
 | **Corrected** (grouped split, cohort fix) | **0.678** | 0.245 | 0 |
 
 The standard evaluation reports **AUROC 0.697**. With patient-level splits and a
-corrected cohort, the identical model scores **0.678** — at the top of the
+corrected cohort, the identical model scores **0.678**, at the top of the
 published 0.63–0.67 range, while much public work quotes the inflated figure.
 
 ![Standard vs corrected evaluation](assets/before_after.png)
@@ -213,12 +213,11 @@ composition shift. (Notebook section 4g.)
 
 **Subgroup/fairness audit** (notebook section 4f). Worst-vs-best AUROC gaps:
 age 0.31 (driven by small extreme-age groups), payer_code 0.17, race 0.16,
-gender 0.02. Reporting a gap is not the same as addressing it: a payer gap of
+gender 0.02. A payer gap of
 this size would need follow-up before any deployment (e.g., larger samples per
-payer, calibration checks by group, and — if the disparity holds — threshold
+payer, calibration checks by group, and if the disparity holds, threshold
 or model adjustments so high-risk patients are not systematically under-served
-by insurance type). This project stops at measurement on purpose; the next step
-would be mitigation, not silence.
+by insurance type).
 
 ### Explanation-audit methodology
 
