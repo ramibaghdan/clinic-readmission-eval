@@ -1,15 +1,39 @@
-# 30-Day Readmission: Reproducing, Fixing, and Auditing the Standard Benchmark
+# Can we honestly predict which hospital patients will come back — and explain why?
 
-**The most widely used public readmission benchmark is routinely evaluated with
-patient-level leakage and a cohort error. This project reproduces the standard
-approach, fixes both, quantifies the inflation, and then audits the corrected
-model the way a health system would have to before deploying it.**
+## Why this exists
 
-The main deliverable is the evaluation.
+When a patient leaves the hospital, care teams want to know who is most likely
+to end up back there within a few weeks. Getting that right matters: hospitals
+are penalized for too many early returns, and teams have limited time to follow
+up with the people at highest risk. Machine learning is often pitched as the
+answer — score every discharge, flag the riskiest patients, maybe even generate
+a short “why this patient” note for the clinician.
+
+In practice, that story breaks in two places. First, many public demos of these
+models look more accurate than they really are because the evaluation quietly
+cheats (for example, by letting the same patient appear in both training and
+testing). Second, once a model exists, Gen AI can write fluent explanations of
+its predictions — but fluent is not the same as faithful. An explanation that
+sounds clinical while inventing factors or flipping risk directions can do real
+harm in a care setting.
+
+This project is a hands-on showcase of **machine learning and Gen AI used the
+way they need to work for impact**, not just a leaderboard score:
+
+1. **Build a real predictive model** for early hospital return on a well-known
+   public dataset.
+2. **Evaluate it honestly** — reproduce the common (leaky) setup, fix the
+   mistakes, and show how much the headline number was inflated.
+3. **Add a Gen AI explanation layer** on top of the model, then **audit** whether
+   those explanations actually match what the model used.
+
+The point is not that a fancier algorithm wins. The point is that **trustworthy
+evaluation and faithful explanations** are what separate a demo from something a
+health system could responsibly consider.
 
 ---
 
-## The headline delta
+## What changed when we evaluated honestly
 
 Same model (LightGBM), same hyperparameters. The only changes are a
 patient-grouped split instead of a leaky stratified one, and a cohort that
@@ -41,11 +65,12 @@ base rate and honesty of the negatives.
 
 ---
 
-## The gen AI finding
+## Can Gen AI explain the prediction without making things up?
 
-An LLM writes a "why is this patient flagged" narrative from the model's SHAP
-drivers; a **separate** pass audits whether it stays faithful. On 50 audited
-explanations of the corrected model:
+A risk score alone is hard to act on. Clinicians also want a short reason —
+“why is this patient flagged?” Here an LLM writes that narrative from the
+model’s real risk drivers (SHAP), and a **separate** pass audits whether the
+story stays faithful. On 50 audited explanations of the corrected model:
 
 | Generator prompt | Explanations reversing a risk direction | Reversal rate (per claim) | Invented-feature rate |
 |---|---|---|---|
