@@ -1,33 +1,33 @@
-# Can we honestly predict which hospital patients will come back — and explain why?
+# Can we honestly predict which hospital patients will come back and explain why?
 
-## Why this exists
+## Project goal
 
 When a patient leaves the hospital, care teams want to know who is most likely
-to end up back there within a few weeks. Getting that right matters: hospitals
+to end up back there within a few weeks. Getting that right is important: hospitals
 are penalized for too many early returns, and teams have limited time to follow
 up with the people at highest risk. Machine learning is often pitched as the
-answer — score every discharge, flag the riskiest patients, maybe even generate
+answer; score every discharge, flag the riskiest patients, maybe even generate
 a short “why this patient” note for the clinician.
 
 In practice, that story breaks in two places. First, many public demos of these
 models look more accurate than they really are because the evaluation quietly
 cheats (for example, by letting the same patient appear in both training and
-testing). Second, once a model exists, Gen AI can write fluent explanations of
-its predictions — but fluent is not the same as faithful. An explanation that
+testing sets). Second, once a model exists, Gen AI can write fluent explanations of
+its predictions, but fluent is not the same as faithful (hallucination). An explanation that
 sounds clinical while inventing factors or flipping risk directions can do real
 harm in a care setting.
 
 This project is a hands-on showcase of **machine learning and Gen AI used the
-way they need to work for impact**, not just a leaderboard score:
+way they need to work for practical use cases (re-admission evaluation)**:
 
 1. **Build a real predictive model** for early hospital return on a well-known
    public dataset.
-2. **Evaluate it honestly** — reproduce the common (leaky) setup, fix the
+2. **Evaluate it honestly**: reproduce the common (leaky) setup, fix the
    mistakes, and show how much the headline number was inflated.
 3. **Add a Gen AI explanation layer** on top of the model, then **audit** whether
    those explanations actually match what the model used.
 
-The point is not that a fancier algorithm wins. The point is that **trustworthy
+The point is not that a fancier algorithm wins, it is to show **trustworthy
 evaluation and faithful explanations** are what separate a demo from something a
 health system could responsibly consider.
 
@@ -35,7 +35,7 @@ health system could responsibly consider.
 
 ## What changed when we evaluated honestly
 
-Same model (LightGBM), same hyperparameters. The only changes are a
+Same model (LightGBM) with the same hyperparameters. The only changes are a
 patient-grouped split instead of a leaky stratified one, and a cohort that
 excludes patients who could not be readmitted (expired/hospice discharges).
 
@@ -45,13 +45,12 @@ excludes patients who could not be readmitted (expired/hospice discharges).
 | **Corrected** (grouped split, cohort fix) | **0.678** | 0.245 | 0 |
 
 The standard evaluation reports **AUROC 0.697**. With patient-level splits and a
-corrected cohort, the identical model scores **0.678** — and the corrected number
-lands squarely in the published 0.63–0.67 range, while much public work quotes
-the inflated figure.
+corrected cohort, the identical model scores **0.678** — at the top of the
+published 0.63–0.67 range, while much public work quotes the inflated figure.
 
 ![Standard vs corrected evaluation](assets/before_after.png)
 
-Isolating each trap (2×2 ablation, section 4a of the analysis notebook):
+Isolating each issue (2×2 ablation, section 4a of the analysis notebook):
 
 | Cohort | Split | AUROC | Note |
 |---|---|---|---|
@@ -60,14 +59,14 @@ Isolating each trap (2×2 ablation, section 4a of the analysis notebook):
 | corrected | stratified | 0.679 | |
 | corrected | grouped | 0.678 | both traps fixed |
 
-Patient-level leakage is the dominant trap; the cohort fix mostly shifts the
+Patient-level leakage is the dominant issue; the cohort fix mostly shifts the
 base rate and honesty of the negatives.
 
 ---
 
 ## Can Gen AI explain the prediction without making things up?
 
-A risk score alone is hard to act on. Clinicians also want a short reason —
+A risk score alone is hard to act on. Clinicians may also want a short reason.
 “why is this patient flagged?” Here an LLM writes that narrative from the
 model’s real risk drivers (SHAP), and a **separate** pass audits whether the
 story stays faithful. On 50 audited explanations of the corrected model:
@@ -77,20 +76,23 @@ story stays faithful. On 50 audited explanations of the corrected model:
 | Naive ("discuss only the drivers") | 10.0% | 0.018 | 0.183 |
 | **Grounded** (drivers + feature glossary + strict rules) | **2.0%** | **0.003** | **0.028** |
 
-Fluent explanations are *mostly* faithful — but only once the prompt is
+Fluent explanations are mostly faithful, but only once the prompt is
 explicitly grounded in the model's real features and audited. A naive prompt
 invented a clinical factor in ~18% of references and flipped a risk direction in
 1 of 10 explanations; grounding the prompt (and giving the extractor the same
-glossary) cut both by ~6×. From `genai_audit.ipynb` (Phase 4, needs an OpenAI
-key). See [Explanation-audit methodology](#explanation-audit-methodology).
+glossary) cut both by ~6×. **n = 50 on one model is enough to demonstrate the
+method, not to claim these rates would hold at scale** — that remains unknown.
+From `genai_audit.ipynb` (Phase 4, needs an OpenAI key). See
+[Explanation-audit methodology](#explanation-audit-methodology).
 
 ---
 
 ## Honest limitations
 
-- **Data is from 1999–2008.** Fine for a methods project; no claim of clinical currency.
-- **Diabetic inpatients only, single data warehouse** (Health Facts / Cerner) — not a general population.
+- **Data is from 1999–2008.** Fine for a methods project; not a claim of clinical currency.
+- **Diabetic inpatients only, single data warehouse** (Health Facts / Cerner); not a general population.
 - **No clinical notes**, so the gen AI layer audits *explanation faithfulness* rather than doing extraction.
+- **Gen AI audit is a demonstration (n = 50, one model).** It shows the method and that grounding helps; it does not establish rates that would hold at production scale.
 
 ---
 
@@ -129,8 +131,7 @@ cp .env.example .env    # add your OPENAI_API_KEY
 
 ---
 
-<details>
-<summary><b>Below the fold: cohort, leakage checks, features, full results, audit methodology</b></summary>
+## Details: cohort, leakage checks, features, full results, audit methodology
 
 ### Dataset
 
@@ -180,8 +181,7 @@ dataset. (Notebook section 4b.)
 | LightGBM | 0.678 | 0.245 | **0.56** |
 
 Gradient boosting beats logistic regression by only ~0.012 AUROC, and a
-**single feature — prior inpatient visits — matches LightGBM on precision@50**.
-That is a real finding, not a footnote.
+**single feature, prior inpatient visits, matches LightGBM on precision@50**.
 
 **Global feature importance** (notebook section 4e). Biggest drivers of the
 corrected model by mean |SHAP| (LightGBM gain agrees on the top two):
@@ -197,12 +197,12 @@ corrected model by mean |SHAP| (LightGBM gain agrees on the top two):
 | `number_diagnoses` | 0.07 |
 | `num_medications` | 0.05 |
 
-Prior utilization dominates — consistent with `number_inpatient` alone nearly
+Prior utilization dominates, consistent with `number_inpatient` alone nearly
 matching the full model above. (Magnitude only; per-patient *direction* is what
 Phase 4 audits.)
 
 **Clinical utility.** precision@k framing: of the 50 highest-risk patients a
-care team could contact in a week, ~56% would actually have been readmitted — a
+care team could contact in a week, ~56% would actually have been readmitted, a
 **5× lift** over the base rate. (Notebook section 4c, with the decision curve.)
 
 **Temporal validation.** Holding out later encounters (an encounter-order proxy;
@@ -211,9 +211,14 @@ confounded: later patients skew toward single-visit, low-utilization cases that
 are inherently harder to predict, so the drop mixes true dataset shift with a
 composition shift. (Notebook section 4g.)
 
-**Subgroup / fairness audit** (notebook section 4f). Worst-vs-best AUROC gaps:
+**Subgroup/fairness audit** (notebook section 4f). Worst-vs-best AUROC gaps:
 age 0.31 (driven by small extreme-age groups), payer_code 0.17, race 0.16,
-gender 0.02.
+gender 0.02. Reporting a gap is not the same as addressing it: a payer gap of
+this size would need follow-up before any deployment (e.g., larger samples per
+payer, calibration checks by group, and — if the disparity holds — threshold
+or model adjustments so high-risk patients are not systematically under-served
+by insurance type). This project stops at measurement on purpose; the next step
+would be mitigation, not silence.
 
 ### Explanation-audit methodology
 
@@ -229,8 +234,7 @@ Phase 4 separates generation from auditing so the checks are honest:
    receives the same glossary so genuine rephrasings map to canonical features
    rather than counting as invented.
 4. Four countable checks vs the SHAP ground truth: **feature grounding**
-   (invented-feature rate), **direction fidelity** (reversal rate — the
-   headline), **unsupported clinical claims**, and **stability** (same patient,
+   (invented-feature rate), **direction fidelity** (reversal rate), **unsupported clinical claims**, and **stability** (same patient,
    repeated temp-0 runs).
 
 ### Reproducibility
@@ -249,9 +253,6 @@ genai_audit.ipynb            optional Phase 4: SHAP -> LLM -> faithfulness audit
 tests/                       leakage / cohort / split integrity guards
 requirements.txt             pinned dependencies
 ```
-
-</details>
-
 ---
 
 *Methods project. Not for clinical use. Dataset: Strack et al., "Impact of HbA1c
